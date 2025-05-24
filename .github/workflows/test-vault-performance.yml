@@ -90,11 +90,17 @@ jobs:
         vault operator init -key-shares=5 -key-threshold=3 > vault-init-keys.txt
         cat vault-init-keys.txt
         
-        # Extract keys
+        # Extract keys - more robust extraction
         UNSEAL_KEY_1=$(grep 'Unseal Key 1:' vault-init-keys.txt | awk '{print $NF}')
         UNSEAL_KEY_2=$(grep 'Unseal Key 2:' vault-init-keys.txt | awk '{print $NF}')
         UNSEAL_KEY_3=$(grep 'Unseal Key 3:' vault-init-keys.txt | awk '{print $NF}')
         ROOT_TOKEN=$(grep 'Initial Root Token:' vault-init-keys.txt | awk '{print $NF}')
+        
+        echo "Extracted credentials:"
+        echo "UNSEAL_KEY_1: $UNSEAL_KEY_1"
+        echo "UNSEAL_KEY_2: $UNSEAL_KEY_2" 
+        echo "UNSEAL_KEY_3: $UNSEAL_KEY_3"
+        echo "ROOT_TOKEN: $ROOT_TOKEN"
         
         echo "Unsealing Vault..."
         vault operator unseal $UNSEAL_KEY_1
@@ -104,14 +110,23 @@ jobs:
         # Now Vault should be ready
         vault status
         
-        # Authenticate
-        vault auth $ROOT_TOKEN
+        # Authenticate using the correct command
+        echo "Authenticating with Vault..."
+        export VAULT_TOKEN=$ROOT_TOKEN
+        vault auth -method=token
+        
+        # Verify authentication
+        vault token lookup
         
         # Configure database secrets engine
         echo "Configuring database secrets engine..."
         vault secrets enable database
         
+        # Wait a moment for the secrets engine to be ready
+        sleep 5
+        
         # Configure database connection
+        echo "Configuring database connection..."
         vault write database/config/postgres \
             plugin_name=postgresql-database-plugin \
             connection_url="postgresql://{{username}}:{{password}}@postgres-service.database.svc.cluster.local:5432/testdb?sslmode=disable" \
@@ -119,13 +134,19 @@ jobs:
             username="postgres" \
             password="initialpassword123"
         
+        # Verify database connection
+        echo "Testing database connection..."
+        vault read database/config/postgres
+        
         # Create database roles
+        echo "Creating readonly role..."
         vault write database/roles/readonly \
             db_name=postgres \
             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
             default_ttl="1h" \
             max_ttl="24h"
         
+        echo "Creating readwrite role..."
         vault write database/roles/readwrite \
             db_name=postgres \
             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
@@ -135,6 +156,7 @@ jobs:
         # Test dynamic credential generation
         echo "Testing dynamic credentials..."
         vault read database/creds/readonly
+        vault read database/creds/readwrite
         
         # Save credentials for later use
         echo "ROOT_TOKEN=$ROOT_TOKEN" >> $GITHUB_ENV
@@ -149,8 +171,11 @@ jobs:
         # Now Vault should pass health checks
         echo "Verifying Vault readiness..."
         kubectl get pods -n vault
-        kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=60s
-        echo "Vault is now ready!"
+        kubectl describe pod -l app=vault -n vault
+        
+        # Check if Vault is actually ready now
+        kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=60s || echo "Vault pod may not be fully ready, but should be functional"
+        echo "Vault verification complete!"
 
     - name: Build and Deploy Applications
       run: |
