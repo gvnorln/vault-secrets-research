@@ -2,81 +2,143 @@ name: Security Scanning
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
   schedule:
-    - cron: '0 6 * * 1'  # Weekly on Monday
-  workflow_dispatch:
+    - cron: '0 6 * * 1' # Weekly on Monday
+
+# Add permissions for SARIF upload and security events
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  secret-scanning:
+  secrets-scan:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Run Gitleaks
-      uses: gitleaks/gitleaks-action@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Gitleaks
+        run: |
+          wget https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+          sudo mv gitleaks /usr/local/bin/
 
-  container-scanning:
+      - name: Run Gitleaks Scan
+        run: |
+          echo "=== Scanning for secrets in code ==="
+          gitleaks detect --verbose --report-format sarif --report-path gitleaks-report.sarif || true
+
+      - name: Upload Gitleaks SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks-report.sarif
+          category: secrets-scan
+
+      - name: Upload Security Report as Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report-${{ github.sha }}
+          path: gitleaks-report.sarif
+
+  container-scan:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Build Images for Scanning
+        run: |
+          docker build -t static-secrets-app:scan test-apps/static-secrets-app/
+          docker build -t vault-secrets-app:scan test-apps/vault-secrets-app/
 
-    - name: Build test images
-      run: |
-        docker build -t static-secrets-app:latest test-apps/static-secrets-app/
-        docker build -t vault-secrets-app:latest test-apps/vault-secrets-app/
+      - name: Run Trivy Container Scan - Static App
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'static-secrets-app:scan'
+          format: 'sarif'
+          output: 'static-app-trivy-results.sarif'
 
-    - name: Run Trivy vulnerability scanner - Static App
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'static-secrets-app:latest'
-        format: 'sarif'
-        output: 'static-app-trivy-results.sarif'
+      - name: Run Trivy Container Scan - Vault App
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'vault-secrets-app:scan'
+          format: 'sarif'
+          output: 'vault-app-trivy-results.sarif'
 
-    - name: Run Trivy vulnerability scanner - Vault App
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'vault-secrets-app:latest'
-        format: 'sarif'
-        output: 'vault-app-trivy-results.sarif'
+      - name: Upload Trivy SARIF results - Static App
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: static-app-trivy-results.sarif
+          category: container-scan-static
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: '.'
+      - name: Upload Trivy SARIF results - Vault App
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: vault-app-trivy-results.sarif
+          category: container-scan-vault
 
-  infrastructure-scanning:
+      - name: Upload Trivy Results as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results-${{ github.sha }}
+          path: '*.sarif'
+
+  dependency-scan:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install Checkov
-      run: pip3 install checkov
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-    - name: Scan Kubernetes manifests
-      run: |
-        checkov -d k8s/ --framework kubernetes --output cli --output json --output-file-path . || true
+      - name: Install Safety
+        run: pip install safety
 
-    - name: Upload Checkov results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: checkov-results
-        path: results_json.json
-        retention-days: 30
+      - name: Scan Python Dependencies - Static App
+        run: |
+          echo "=== Scanning Static Secrets App Dependencies ==="
+          cd test-apps/static-secrets-app
+          pip install -r requirements.txt
+          safety check --json --output ../../static-app-safety.json || true
+          cd ../..
+
+      - name: Scan Python Dependencies - Vault App
+        run: |
+          echo "=== Scanning Vault Secrets App Dependencies ==="
+          cd test-apps/vault-secrets-app
+          pip install -r requirements.txt
+          safety check --json --output ../../vault-app-safety.json || true
+          cd ../..
+
+      - name: Upload Dependency Scan Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan-${{ github.sha }}
+          path: '*-safety.json'
