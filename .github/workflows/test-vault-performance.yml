@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Run tests every day at 2 AM UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
@@ -22,78 +21,74 @@ env:
   HELM_VERSION: v3.13.0
 
 jobs:
-  setup-infrastructure:
+  # CONSOLIDATE EVERYTHING INTO ONE JOB - Minikube state tidak bisa di-share antar job
+  performance-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Docker
-      uses: docker/setup-buildx-action@v3
-
-    - name: Install kubectl
+    - name: Setup Tools
       run: |
+        # Install kubectl
         curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    - name: Install Helm
-      run: |
+        # Install Helm
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-    - name: Install Minikube
-      run: |
+        # Install Minikube
         curl -LO https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64
         sudo install minikube-linux-amd64 /usr/local/bin/minikube
         rm minikube-linux-amd64
 
-    - name: Start Minikube
-      run: |
-        minikube start --driver=docker --memory=4096 --cpus=2
-        minikube addons enable ingress
-        kubectl cluster-info
-        kubectl get nodes
-
-    - name: Deploy PostgreSQL
-      run: |
-        kubectl create namespace database
-        kubectl apply -f k8s/postgres/
-        kubectl wait --for=condition=ready pod -l app=postgres -n database --timeout=300s
-        kubectl get pods -n database
-
-    - name: Deploy Vault
-      run: |
-        kubectl create namespace vault
-        kubectl apply -f k8s/vault/
-
-        echo "===> Menunggu Vault pod hingga READY..."
-        if ! kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=600s; then
-          echo "Vault pod gagal ready. Dumping describe dan logs untuk debugging..."
-          kubectl describe pods -l app=vault -n vault || true
-          kubectl logs -l app=vault -n vault || true
-          exit 1
-        fi
-
-        kubectl get pods -n vault
-
-    - name: Initialize and Configure Vault
-      run: |
-        # Port forward Vault
-        kubectl port-forward svc/vault-service 8200:8200 -n vault &
-        PF_PID=$!
-        sleep 10
-        
-        export VAULT_ADDR="http://localhost:8200"
-        
         # Install Vault CLI
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
         sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-        sudo apt-get update && sudo apt-get install vault
+        sudo apt-get update && sudo apt-get install vault jq bc
+
+    - name: Start Minikube and Deploy Infrastructure
+      run: |
+        # Start Minikube
+        minikube start --driver=docker --memory=4096 --cpus=2
+        minikube addons enable ingress
+        kubectl cluster-info
+
+        # Deploy PostgreSQL
+        kubectl create namespace database
+        kubectl apply -f k8s/postgres/
+        echo "Waiting for PostgreSQL..."
+        kubectl wait --for=condition=ready pod -l app=postgres -n database --timeout=300s
+
+        # Deploy Vault (tanpa wait for ready dulu)
+        kubectl create namespace vault
+        kubectl apply -f k8s/vault/
+        echo "Waiting for Vault pod to be running (not ready yet)..."
+        kubectl wait --for=condition=PodScheduled pod -l app=vault -n vault --timeout=300s
+        
+        # Wait for Vault container to be running (meskipun belum ready)
+        timeout 300 bash -c 'until kubectl get pod -l app=vault -n vault -o jsonpath="{.items[0].status.phase}" | grep -q Running; do sleep 5; done'
+
+    - name: Initialize and Configure Vault
+      run: |
+        # Port forward Vault (masih uninitialized, tapi sudah running)
+        kubectl port-forward svc/vault-service 8200:8200 -n vault &
+        PF_PID=$!
+        sleep 15
+        
+        export VAULT_ADDR="http://localhost:8200"
+        
+        # Check Vault status (akan return error karena uninitialized, tapi itu normal)
+        echo "Checking Vault status before initialization:"
+        vault status || echo "Expected: Vault is not initialized"
         
         # Initialize Vault
+        echo "Initializing Vault..."
         vault operator init -key-shares=5 -key-threshold=3 > vault-init-keys.txt
+        cat vault-init-keys.txt
         
         # Extract keys
         UNSEAL_KEY_1=$(grep 'Unseal Key 1:' vault-init-keys.txt | awk '{print $NF}')
@@ -101,15 +96,22 @@ jobs:
         UNSEAL_KEY_3=$(grep 'Unseal Key 3:' vault-init-keys.txt | awk '{print $NF}')
         ROOT_TOKEN=$(grep 'Initial Root Token:' vault-init-keys.txt | awk '{print $NF}')
         
-        # Unseal Vault
+        echo "Unsealing Vault..."
         vault operator unseal $UNSEAL_KEY_1
         vault operator unseal $UNSEAL_KEY_2
         vault operator unseal $UNSEAL_KEY_3
         
-        # Configure database secrets engine
+        # Now Vault should be ready
+        vault status
+        
+        # Authenticate
         vault auth $ROOT_TOKEN
+        
+        # Configure database secrets engine
+        echo "Configuring database secrets engine..."
         vault secrets enable database
         
+        # Configure database connection
         vault write database/config/postgres \
             plugin_name=postgresql-database-plugin \
             connection_url="postgresql://{{username}}:{{password}}@postgres-service.database.svc.cluster.local:5432/testdb?sslmode=disable" \
@@ -117,6 +119,7 @@ jobs:
             username="postgres" \
             password="initialpassword123"
         
+        # Create database roles
         vault write database/roles/readonly \
             db_name=postgres \
             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
@@ -130,52 +133,28 @@ jobs:
             max_ttl="24h"
         
         # Test dynamic credential generation
+        echo "Testing dynamic credentials..."
         vault read database/creds/readonly
         
+        # Save credentials for later use
+        echo "ROOT_TOKEN=$ROOT_TOKEN" >> $GITHUB_ENV
+        echo "UNSEAL_KEY_1=$UNSEAL_KEY_1" >> $GITHUB_ENV
+        echo "UNSEAL_KEY_2=$UNSEAL_KEY_2" >> $GITHUB_ENV
+        echo "UNSEAL_KEY_3=$UNSEAL_KEY_3" >> $GITHUB_ENV
+        
         kill $PF_PID
-        
-        # Save token as environment variable for next jobs
-        echo "VAULT_ROOT_TOKEN=$ROOT_TOKEN" >> $GITHUB_ENV
 
-    - name: Upload Vault Keys Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: vault-keys
-        path: vault-init-keys.txt
-        retention-days: 1
-
-  build-and-deploy-apps:
-    needs: setup-infrastructure
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download Vault Keys
-      uses: actions/download-artifact@v4
-      with:
-        name: vault-keys
-
-    - name: Setup Minikube Environment
+    - name: Verify Vault is Ready
       run: |
-        curl -LO https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64
-        sudo install minikube-linux-amd64 /usr/local/bin/minikube
-        rm minikube-linux-amd64
-        
-        curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+        # Now Vault should pass health checks
+        echo "Verifying Vault readiness..."
+        kubectl get pods -n vault
+        kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=60s
+        echo "Vault is now ready!"
 
-    - name: Connect to Existing Minikube
+    - name: Build and Deploy Applications
       run: |
-        minikube start --driver=docker --memory=4096 --cpus=2
-        kubectl get nodes
-        kubectl get pods --all-namespaces
-
-    - name: Build Application Images
-      run: |
+        # Set docker environment for minikube
         eval $(minikube docker-env)
         
         # Build static secrets app
@@ -187,14 +166,7 @@ jobs:
         echo "Building vault secrets app..."
         cd ../vault-secrets-app
         docker build -t vault-secrets-app:v1.0 .
-        
-        # Verify images
-        docker images | grep secrets-app
-
-    - name: Deploy Applications
-      run: |
-        # Get root token
-        ROOT_TOKEN=$(grep 'Initial Root Token:' vault-init-keys.txt | awk '{print $NF}')
+        cd ../..
         
         # Deploy static secrets app
         kubectl apply -f k8s/app/static-secrets-deployment.yaml
@@ -208,48 +180,15 @@ jobs:
         
         kubectl get pods
 
-  performance-testing:
-    needs: build-and-deploy-apps
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    strategy:
-      matrix:
-        test_scenario: ['light_load', 'medium_load', 'heavy_load']
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Test Environment
-      run: |
-        # Install dependencies
-        sudo apt-get update
-        sudo apt-get install -y jq curl bc
-        
-        curl -LO https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64
-        sudo install minikube-linux-amd64 /usr/local/bin/minikube
-        rm minikube-linux-amd64
-        
-        curl -LO "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
-        chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
-
-    - name: Connect to Minikube
-      run: |
-        minikube start --driver=docker --memory=4096 --cpus=2
-        kubectl get pods
-
     - name: Run Performance Tests
       run: |
-        # Create performance test script
+        # Create comprehensive performance test
         cat > performance_test.sh << 'SCRIPT'
         #!/bin/bash
         
-        TEST_SCENARIO=$1
-        ITERATIONS=${2:-10}
+        ITERATIONS=${1:-10}
         
-        echo "=== Performance Test: $TEST_SCENARIO ==="
+        echo "=== Vault Dynamic Secrets Performance Test ==="
         echo "Iterations: $ITERATIONS"
         
         # Port forward applications
@@ -258,240 +197,147 @@ jobs:
         kubectl port-forward svc/vault-secrets-service 8081:5000 &
         VAULT_PID=$!
         
-        sleep 10
+        sleep 15
         
-        # Test parameters based on scenario
-        case $TEST_SCENARIO in
-            "light_load")
-                CONCURRENT_REQUESTS=1
-                REQUEST_DELAY=1
-                ;;
-            "medium_load")
-                CONCURRENT_REQUESTS=5
-                REQUEST_DELAY=0.5
-                ;;
-            "heavy_load")
-                CONCURRENT_REQUESTS=10
-                REQUEST_DELAY=0.1
-                ;;
-        esac
+        # Test scenarios
+        declare -A scenarios=(
+            ["light_load"]="1 1.0"
+            ["medium_load"]="5 0.5" 
+            ["heavy_load"]="10 0.1"
+        )
         
-        # Performance test results file
-        RESULTS_FILE="performance_results_${TEST_SCENARIO}.json"
-        echo '{"test_scenario":"'$TEST_SCENARIO'","results":[]}' > $RESULTS_FILE
+        # Overall results
+        echo '{"test_date":"'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'","scenarios":{}}' > performance_report.json
         
-        # Run tests
-        for i in $(seq 1 $ITERATIONS); do
-            echo "Running iteration $i/$ITERATIONS..."
+        for scenario in "${!scenarios[@]}"; do
+            echo "=== Testing $scenario ==="
             
-            # Test static app
-            STATIC_START=$(date +%s.%N)
-            STATIC_RESPONSE=$(curl -s http://localhost:8080/users)
-            STATIC_END=$(date +%s.%N)
-            STATIC_TIME=$(echo "$STATIC_END - $STATIC_START" | bc)
+            IFS=' ' read -r concurrent_requests request_delay <<< "${scenarios[$scenario]}"
             
-            # Test vault app
-            VAULT_START=$(date +%s.%N)
-            VAULT_RESPONSE=$(curl -s http://localhost:8081/users)
-            VAULT_END=$(date +%s.%N)
-            VAULT_TIME=$(echo "$VAULT_END - $VAULT_START" | bc)
+            # Results for this scenario
+            scenario_results='{"concurrent_requests":'$concurrent_requests',"request_delay":'$request_delay',"results":[]}'
             
-            # Extract metrics (with error handling)
-            STATIC_METRICS=$(echo "$STATIC_RESPONSE" | jq -r '.metrics // "null"')
-            VAULT_METRICS=$(echo "$VAULT_RESPONSE" | jq -r '.metrics // "null"')
+            for i in $(seq 1 $ITERATIONS); do
+                echo "Iteration $i/$ITERATIONS for $scenario..."
+                
+                # Test static app
+                STATIC_START=$(date +%s.%N)
+                STATIC_RESPONSE=$(timeout 30 curl -s http://localhost:8080/users || echo '{"error":"timeout"}')
+                STATIC_END=$(date +%s.%N)
+                STATIC_TIME=$(echo "$STATIC_END - $STATIC_START" | bc -l)
+                
+                # Test vault app  
+                VAULT_START=$(date +%s.%N)
+                VAULT_RESPONSE=$(timeout 30 curl -s http://localhost:8081/users || echo '{"error":"timeout"}')
+                VAULT_END=$(date +%s.%N)
+                VAULT_TIME=$(echo "$VAULT_END - $VAULT_START" | bc -l)
+                
+                # Parse responses safely
+                STATIC_SUCCESS=$(echo "$STATIC_RESPONSE" | jq -r 'if type == "object" and has("error") then "false" else "true" end' 2>/dev/null || echo "false")
+                VAULT_SUCCESS=$(echo "$VAULT_RESPONSE" | jq -r 'if type == "object" and has("error") then "false" else "true" end' 2>/dev/null || echo "false")
+                
+                # Build result entry
+                RESULT_ENTRY=$(jq -n \
+                    --arg iter "$i" \
+                    --arg static_time "$STATIC_TIME" \
+                    --arg static_success "$STATIC_SUCCESS" \
+                    --arg vault_time "$VAULT_TIME" \
+                    --arg vault_success "$VAULT_SUCCESS" \
+                    '{
+                        iteration: ($iter | tonumber),
+                        static_app: {
+                            response_time: ($static_time | tonumber),
+                            success: ($static_success == "true")
+                        },
+                        vault_app: {
+                            response_time: ($vault_time | tonumber), 
+                            success: ($vault_success == "true")
+                        }
+                    }')
+                
+                scenario_results=$(echo "$scenario_results" | jq ".results += [$RESULT_ENTRY]")
+                
+                sleep $request_delay
+            done
             
-            # Build result entry
-            RESULT_ENTRY=$(jq -n \
-                --arg iter "$i" \
-                --arg static_time "$STATIC_TIME" \
-                --argjson static_metrics "$STATIC_METRICS" \
-                --arg vault_time "$VAULT_TIME" \
-                --argjson vault_metrics "$VAULT_METRICS" \
-                '{
-                    iteration: ($iter | tonumber),
-                    static_app: {
-                        total_response_time: $static_time,
-                        metrics: $static_metrics
-                    },
-                    vault_app: {
-                        total_response_time: $vault_time,
-                        metrics: $vault_metrics
-                    }
-                }')
+            # Add scenario results to main report
+            jq --arg scenario "$scenario" --argjson data "$scenario_results" '.scenarios[$scenario] = $data' performance_report.json > tmp.json && mv tmp.json performance_report.json
             
-            # Add to results file
-            jq ".results += [$RESULT_ENTRY]" $RESULTS_FILE > tmp.json && mv tmp.json $RESULTS_FILE
+            # Calculate and show summary for this scenario
+            STATIC_AVG=$(echo "$scenario_results" | jq -r '.results | map(select(.static_app.success) | .static_app.response_time) | add / length')
+            VAULT_AVG=$(echo "$scenario_results" | jq -r '.results | map(select(.vault_app.success) | .vault_app.response_time) | add / length')
             
-            sleep $REQUEST_DELAY
+            if [[ "$STATIC_AVG" != "null" && "$VAULT_AVG" != "null" ]]; then
+                OVERHEAD=$(echo "$VAULT_AVG - $STATIC_AVG" | bc -l)
+                OVERHEAD_PERCENT=$(echo "scale=2; ($OVERHEAD / $STATIC_AVG) * 100" | bc -l)
+                echo "$scenario Results:"
+                echo "  Static App Average: ${STATIC_AVG}s"
+                echo "  Vault App Average: ${VAULT_AVG}s"
+                echo "  Overhead: ${OVERHEAD}s (${OVERHEAD_PERCENT}%)"
+            fi
         done
         
-        # Calculate summary statistics
-        echo "=== Test Summary ==="
-        echo "Results saved to: $RESULTS_FILE"
-        
-        # Calculate averages
-        STATIC_AVG=$(jq -r '.results | map(.static_app.total_response_time | tonumber) | add / length' $RESULTS_FILE)
-        VAULT_AVG=$(jq -r '.results | map(.vault_app.total_response_time | tonumber) | add / length' $RESULTS_FILE)
-        OVERHEAD=$(echo "$VAULT_AVG - $STATIC_AVG" | bc)
-        OVERHEAD_PERCENT=$(echo "scale=2; ($OVERHEAD / $STATIC_AVG) * 100" | bc)
-        
-        echo "Static App Average: ${STATIC_AVG}s"
-        echo "Vault App Average: ${VAULT_AVG}s" 
-        echo "Vault Overhead: ${OVERHEAD}s (${OVERHEAD_PERCENT}%)"
+        echo "=== Complete Performance Report ==="
+        cat performance_report.json | jq .
         
         # Cleanup
-        kill $STATIC_PID $VAULT_PID
+        kill $STATIC_PID $VAULT_PID 2>/dev/null || true
         SCRIPT
         
         chmod +x performance_test.sh
-        ./performance_test.sh ${{ matrix.test_scenario }} ${{ github.event.inputs.test_iterations || '10' }}
+        ./performance_test.sh ${{ github.event.inputs.test_iterations || '10' }}
 
-    - name: Upload Performance Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: performance-results-${{ matrix.test_scenario }}
-        path: performance_results_*.json
-        retention-days: 30
-
-  generate-report:
-    needs: performance-testing
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download All Performance Results
-      uses: actions/download-artifact@v4
-      with:
-        pattern: performance-results-*
-        merge-multiple: true
-
-    - name: Generate Performance Report
+    - name: Generate Summary Report
       run: |
-        # Install dependencies
-        sudo apt-get update
-        sudo apt-get install -y jq bc python3 python3-pip
-        
-        # Create comprehensive report
-        cat > generate_report.py << 'SCRIPT'
+        # Create markdown summary
+        python3 << 'PYTHON'
         import json
-        import os
         import statistics
-        from datetime import datetime
         
-        # Load all test results
-        results = {}
-        for filename in os.listdir('.'):
-            if filename.startswith('performance_results_') and filename.endswith('.json'):
-                scenario = filename.replace('performance_results_', '').replace('.json', '')
-                with open(filename, 'r') as f:
-                    results[scenario] = json.load(f)
+        # Load results
+        with open('performance_report.json', 'r') as f:
+            data = json.load(f)
         
-        if not results:
-            print("No performance results found!")
-            exit(1)
+        md_content = f"# Vault Dynamic Secrets Performance Report\n\n"
+        md_content += f"**Test Date:** {data['test_date']}\n\n"
+        md_content += "## Summary\n\n"
+        md_content += "| Scenario | Static Avg (s) | Vault Avg (s) | Overhead (s) | Overhead (%) |\n"
+        md_content += "|----------|----------------|---------------|--------------|---------------|\n"
         
-        # Generate report
-        report = {
-            'test_date': datetime.now().isoformat(),
-            'summary': {},
-            'detailed_results': results
-        }
-        
-        # Calculate summary statistics
-        for scenario, data in results.items():
-            static_times = [float(r['static_app']['total_response_time']) for r in data['results']]
-            vault_times = [float(r['vault_app']['total_response_time']) for r in data['results']]
+        for scenario, results in data['scenarios'].items():
+            successful_static = [r['static_app']['response_time'] for r in results['results'] if r['static_app']['success']]
+            successful_vault = [r['vault_app']['response_time'] for r in results['results'] if r['vault_app']['success']]
             
-            static_avg = statistics.mean(static_times)
-            vault_avg = statistics.mean(vault_times)
-            overhead = vault_avg - static_avg
-            overhead_percent = (overhead / static_avg) * 100
-            
-            report['summary'][scenario] = {
-                'static_app': {
-                    'avg_response_time': round(static_avg, 4),
-                    'min_response_time': round(min(static_times), 4),
-                    'max_response_time': round(max(static_times), 4),
-                    'std_dev': round(statistics.stdev(static_times) if len(static_times) > 1 else 0, 4)
-                },
-                'vault_app': {
-                    'avg_response_time': round(vault_avg, 4),
-                    'min_response_time': round(min(vault_times), 4), 
-                    'max_response_time': round(max(vault_times), 4),
-                    'std_dev': round(statistics.stdev(vault_times) if len(vault_times) > 1 else 0, 4)
-                },
-                'vault_overhead': {
-                    'absolute_seconds': round(overhead, 4),
-                    'percentage': round(overhead_percent, 2)
-                },
-                'iterations': len(data['results'])
-            }
+            if successful_static and successful_vault:
+                static_avg = statistics.mean(successful_static)
+                vault_avg = statistics.mean(successful_vault)
+                overhead = vault_avg - static_avg
+                overhead_pct = (overhead / static_avg) * 100
+                
+                md_content += f"| {scenario.replace('_', ' ').title()} | {static_avg:.4f} | {vault_avg:.4f} | {overhead:.4f} | {overhead_pct:.2f}% |\n"
         
-        # Save report
-        with open('performance_report.json', 'w') as f:
-            json.dump(report, f, indent=2)
-        
-        # Generate markdown summary
-        md_content = f"""# Vault Dynamic Secrets Performance Report
-
-        **Test Date:** {report['test_date']}
-
-        ## Summary
-
-        | Test Scenario | Static App Avg | Vault App Avg | Overhead | Overhead % |
-        |---------------|----------------|---------------|----------|------------|
-        """
-        
-        for scenario, stats in report['summary'].items():
-            static_avg = stats['static_app']['avg_response_time']
-            vault_avg = stats['vault_app']['avg_response_time']
-            overhead = stats['vault_overhead']['absolute_seconds']
-            overhead_pct = stats['vault_overhead']['percentage']
-            
-            md_content += f"| {scenario.replace('_', ' ').title()} | {static_avg}s | {vault_avg}s | {overhead}s | {overhead_pct}% |\\n"
-        
-        md_content += """
-        ## Key Insights
-
-        - **Static Secrets**: Baseline performance with hardcoded credentials
-        - **Vault Dynamic Secrets**: Additional overhead for security benefits
-        - **Trade-off Analysis**: Security vs Performance overhead
-
-        ## Detailed Results
-
-        See `performance_report.json` for complete test data.
-        """
+        md_content += "\n## Key Insights\n\n"
+        md_content += "- **Static Secrets**: Baseline performance with hardcoded credentials\n"
+        md_content += "- **Vault Dynamic Secrets**: Additional security with measured performance cost\n"
+        md_content += "- **Trade-off**: Enhanced security vs Performance overhead\n"
         
         with open('performance_summary.md', 'w') as f:
             f.write(md_content)
         
-        print("Performance report generated successfully!")
-        SCRIPT
-        
-        python3 generate_report.py
+        print("Summary report generated!")
+        PYTHON
 
-    - name: Upload Final Report
+    - name: Upload Results
       uses: actions/upload-artifact@v4
       with:
-        name: performance-report
+        name: performance-results
         path: |
           performance_report.json
           performance_summary.md
-        retention-days: 90
+          vault-init-keys.txt
+        retention-days: 30
 
-    - name: Comment PR with Results
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const summary = fs.readFileSync('performance_summary.md', 'utf8');
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: summary
-          });
+    - name: Display Results
+      run: |
+        echo "=== Performance Summary ==="
+        cat performance_summary.md
