@@ -110,12 +110,12 @@ jobs:
         # Now Vault should be ready
         vault status
         
-        # Authenticate using the correct command
-        echo "Authenticating with Vault..."
+        # Authenticate using environment variable (simpler approach)
+        echo "Setting Vault token..."
         export VAULT_TOKEN=$ROOT_TOKEN
-        vault auth -method=token
         
-        # Verify authentication
+        # Verify authentication works
+        echo "Verifying authentication..."
         vault token lookup
         
         # Configure database secrets engine
