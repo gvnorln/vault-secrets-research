@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config
+  namespace: vault
+data:
+  vault.hcl: |
+    ui = true
+    
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      tls_disable = true
+    }
+    
+    storage "file" {
+      path = "/vault/data"
+    }
+    
+    default_lease_ttl = "168h"
+    max_lease_ttl = "720h"
+    
+    log_level = "Info"
+    
+    api_addr = "http://vault-service:8200"
+    cluster_addr = "http://vault-service:8201"
