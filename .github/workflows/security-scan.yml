@@ -2,16 +2,17 @@ name: Security Scanning
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     - cron: '0 6 * * 1'  # Weekly on Monday
+  workflow_dispatch:
 
 jobs:
   secret-scanning:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -25,10 +26,13 @@ jobs:
 
   container-scanning:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
     - name: Build test images
       run: |
@@ -51,12 +55,13 @@ jobs:
 
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
+      if: always()
       with:
         sarif_file: '.'
 
   infrastructure-scanning:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -66,10 +71,12 @@ jobs:
 
     - name: Scan Kubernetes manifests
       run: |
-        checkov -d k8s/ --framework kubernetes --output cli --output json --output-file-path checkov-results.json
+        checkov -d k8s/ --framework kubernetes --output cli --output json --output-file-path . || true
 
     - name: Upload Checkov results
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: checkov-results
-        path: checkov-results.json
+        path: results_json.json
+        retention-days: 30

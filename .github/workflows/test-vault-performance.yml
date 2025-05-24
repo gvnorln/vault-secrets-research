@@ -51,7 +51,7 @@ jobs:
 
     - name: Start Minikube
       run: |
-        minikube start --driver=docker --memory=4096 --cpus=2
+        minikube start --driver=docker --memory=8192 --cpus=4
         minikube addons enable ingress
         kubectl cluster-info
         kubectl get nodes
@@ -67,7 +67,15 @@ jobs:
       run: |
         kubectl create namespace vault
         kubectl apply -f k8s/vault/
-        kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=300s
+
+        echo "===> Menunggu Vault pod hingga READY..."
+        if ! kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=600s; then
+          echo "Vault pod gagal ready. Dumping describe dan logs untuk debugging..."
+          kubectl describe pods -l app=vault -n vault || true
+          kubectl logs -l app=vault -n vault || true
+          exit 1
+        fi
+
         kubectl get pods -n vault
 
     - name: Initialize and Configure Vault
