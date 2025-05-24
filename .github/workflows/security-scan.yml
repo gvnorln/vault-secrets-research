@@ -8,7 +8,7 @@ on:
   schedule:
     - cron: '0 6 * * 1' # Weekly on Monday
 
-# Add permissions for SARIF upload and security events
+# Add permissions for SARIF upload
 permissions:
   contents: read
   security-events: write
@@ -18,9 +18,6 @@ jobs:
   secrets-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,28 +33,18 @@ jobs:
       - name: Run Gitleaks Scan
         run: |
           echo "=== Scanning for secrets in code ==="
-          gitleaks detect --verbose --report-format sarif --report-path gitleaks-report.sarif || true
+          gitleaks detect --verbose --report-format json --report-path gitleaks-report.json
 
-      - name: Upload Gitleaks SARIF results
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: gitleaks-report.sarif
-          category: secrets-scan
-
-      - name: Upload Security Report as Artifact
+      - name: Upload Security Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report-${{ github.sha }}
-          path: gitleaks-report.sarif
+          path: gitleaks-report.json
 
   container-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,19 +68,20 @@ jobs:
           format: 'sarif'
           output: 'vault-app-trivy-results.sarif'
 
-      - name: Upload Trivy SARIF results - Static App
+      # Upload SARIF files separately to avoid category conflicts
+      - name: Upload SARIF results for Static App
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: static-app-trivy-results.sarif
-          category: container-scan-static
+          category: trivy-static-app
 
-      - name: Upload Trivy SARIF results - Vault App
+      - name: Upload SARIF results for Vault App
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: vault-app-trivy-results.sarif
-          category: container-scan-vault
+          category: trivy-vault-app
 
       - name: Upload Trivy Results as Artifacts
         if: always()
@@ -105,9 +93,6 @@ jobs:
   dependency-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
