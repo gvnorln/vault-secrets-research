@@ -2,9 +2,9 @@ name: Vault Dynamic Secrets Performance Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run tests every day at 2 AM UTC
     - cron: '0 2 * * *'
@@ -78,6 +78,11 @@ jobs:
         sleep 10
         
         export VAULT_ADDR="http://localhost:8200"
+        
+        # Install Vault CLI
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+        sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+        sudo apt-get update && sudo apt-get install vault
         
         # Initialize Vault
         vault operator init -key-shares=5 -key-threshold=3 > vault-init-keys.txt
@@ -212,7 +217,7 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        sudo apt-get install -y jq curl
+        sudo apt-get install -y jq curl bc
         
         curl -LO https://storage.googleapis.com/minikube/releases/$MINIKUBE_VERSION/minikube-linux-amd64
         sudo install minikube-linux-amd64 /usr/local/bin/minikube
@@ -283,25 +288,28 @@ jobs:
             VAULT_END=$(date +%s.%N)
             VAULT_TIME=$(echo "$VAULT_END - $VAULT_START" | bc)
             
-            # Extract metrics
-            STATIC_METRICS=$(echo $STATIC_RESPONSE | jq -r '.metrics')
-            VAULT_METRICS=$(echo $VAULT_RESPONSE | jq -r '.metrics')
+            # Extract metrics (with error handling)
+            STATIC_METRICS=$(echo "$STATIC_RESPONSE" | jq -r '.metrics // "null"')
+            VAULT_METRICS=$(echo "$VAULT_RESPONSE" | jq -r '.metrics // "null"')
             
             # Build result entry
-            RESULT_ENTRY=$(cat << EOF
-        {
-            "iteration": $i,
-            "static_app": {
-                "total_response_time": "$STATIC_TIME",
-                "metrics": $STATIC_METRICS
-            },
-            "vault_app": {
-                "total_response_time": "$VAULT_TIME", 
-                "metrics": $VAULT_METRICS
-            }
-        }
-        EOF
-            )
+            RESULT_ENTRY=$(jq -n \
+                --arg iter "$i" \
+                --arg static_time "$STATIC_TIME" \
+                --argjson static_metrics "$STATIC_METRICS" \
+                --arg vault_time "$VAULT_TIME" \
+                --argjson vault_metrics "$VAULT_METRICS" \
+                '{
+                    iteration: ($iter | tonumber),
+                    static_app: {
+                        total_response_time: $static_time,
+                        metrics: $static_metrics
+                    },
+                    vault_app: {
+                        total_response_time: $vault_time,
+                        metrics: $vault_metrics
+                    }
+                }')
             
             # Add to results file
             jq ".results += [$RESULT_ENTRY]" $RESULTS_FILE > tmp.json && mv tmp.json $RESULTS_FILE
@@ -328,8 +336,6 @@ jobs:
         SCRIPT
         
         chmod +x performance_test.sh
-        
-        # Run the test
         ./performance_test.sh ${{ matrix.test_scenario }} ${{ github.event.inputs.test_iterations || '10' }}
 
     - name: Upload Performance Results
@@ -357,7 +363,7 @@ jobs:
       run: |
         # Install dependencies
         sudo apt-get update
-        sudo apt-get install -y jq bc
+        sudo apt-get install -y jq bc python3 python3-pip
         
         # Create comprehensive report
         cat > generate_report.py << 'SCRIPT'
@@ -373,6 +379,10 @@ jobs:
                 scenario = filename.replace('performance_results_', '').replace('.json', '')
                 with open(filename, 'r') as f:
                     results[scenario] = json.load(f)
+        
+        if not results:
+            print("No performance results found!")
+            exit(1)
         
         # Generate report
         report = {
@@ -396,13 +406,13 @@ jobs:
                     'avg_response_time': round(static_avg, 4),
                     'min_response_time': round(min(static_times), 4),
                     'max_response_time': round(max(static_times), 4),
-                    'std_dev': round(statistics.stdev(static_times), 4)
+                    'std_dev': round(statistics.stdev(static_times) if len(static_times) > 1 else 0, 4)
                 },
                 'vault_app': {
                     'avg_response_time': round(vault_avg, 4),
                     'min_response_time': round(min(vault_times), 4), 
                     'max_response_time': round(max(vault_times), 4),
-                    'std_dev': round(statistics.stdev(vault_times), 4)
+                    'std_dev': round(statistics.stdev(vault_times) if len(vault_times) > 1 else 0, 4)
                 },
                 'vault_overhead': {
                     'absolute_seconds': round(overhead, 4),
@@ -417,11 +427,11 @@ jobs:
         
         # Generate markdown summary
         md_content = f"""# Vault Dynamic Secrets Performance Report
-        
+
         **Test Date:** {report['test_date']}
-        
+
         ## Summary
-        
+
         | Test Scenario | Static App Avg | Vault App Avg | Overhead | Overhead % |
         |---------------|----------------|---------------|----------|------------|
         """
@@ -432,17 +442,17 @@ jobs:
             overhead = stats['vault_overhead']['absolute_seconds']
             overhead_pct = stats['vault_overhead']['percentage']
             
-            md_content += f"| {scenario.replace('_', ' ').title()} | {static_avg}s | {vault_avg}s | {overhead}s | {overhead_pct}% |\n"
+            md_content += f"| {scenario.replace('_', ' ').title()} | {static_avg}s | {vault_avg}s | {overhead}s | {overhead_pct}% |\\n"
         
         md_content += """
         ## Key Insights
-        
+
         - **Static Secrets**: Baseline performance with hardcoded credentials
         - **Vault Dynamic Secrets**: Additional overhead for security benefits
         - **Trade-off Analysis**: Security vs Performance overhead
-        
+
         ## Detailed Results
-        
+
         See `performance_report.json` for complete test data.
         """
         

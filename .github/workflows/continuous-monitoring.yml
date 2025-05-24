@@ -2,7 +2,6 @@ name: Continuous Performance Monitoring
 
 on:
   schedule:
-    # Run every 6 hours
     - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
@@ -14,171 +13,156 @@ on:
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  ALERT_THRESHOLD: ${{ github.event.inputs.alert_threshold || '75' }}
+  ALERT_THRESHOLD: ${{ github.event.inputs.alert_threshold }}
 
 jobs:
   performance-monitoring:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Infrastructure
-      run: |
-        # Install tools
-        curl -LO https://storage.googleapis.com/minikube/releases/v1.32.0/minikube-linux-amd64
-        sudo install minikube-linux-amd64 /usr/local/bin/minikube
-        curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-        chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-        
-        # Start minikube
-        minikube start --driver=docker --memory=4096 --cpus=2
-        
-        # Deploy infrastructure quickly
-        kubectl apply -f k8s/postgres/
-        kubectl apply -f k8s/vault/
-        kubectl wait --for=condition=ready pod -l app=postgres -n database --timeout=300s
-        kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=300s
+      - name: Setup Infrastructure
+        run: |
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.32.0/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+          minikube start --driver=docker --memory=4096 --cpus=2
+          kubectl apply -f k8s/postgres/
+          kubectl apply -f k8s/vault/
+          kubectl wait --for=condition=ready pod -l app=postgres -n database --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=300s
 
-    - name: Quick Performance Check
-      id: perf_check
-      run: |
-        # Initialize Vault quickly
-        kubectl port-forward svc/vault-service 8200:8200 -n vault &
-        PF_PID=$!
-        sleep 10
-        
-        export VAULT_ADDR="http://localhost:8200"
-        vault operator init -key-shares=1 -key-threshold=1 > vault-keys.txt
-        UNSEAL_KEY=$(grep 'Unseal Key 1:' vault-keys.txt | awk '{print $NF}')
-        ROOT_TOKEN=$(grep 'Initial Root Token:' vault-keys.txt | awk '{print $NF}')
-        vault operator unseal $UNSEAL_KEY
-        vault auth $ROOT_TOKEN
-        
-        # Configure database
-        vault secrets enable database
-        vault write database/config/postgres             plugin_name=postgresql-database-plugin             connection_url="postgresql://{{username}}:{{password}}@postgres-service.database.svc.cluster.local:5432/testdb?sslmode=disable"             allowed_roles="readonly"             username="postgres"             password="initialpassword123"
-        vault write database/roles/readonly             db_name=postgres             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";"             default_ttl="1h"             max_ttl="24h"
-        
-        kill $PF_PID
-        
-        # Build and deploy apps
-        eval $(minikube docker-env)
-        cd test-apps/static-secrets-app && docker build -t static-secrets-app:monitor . && cd ../..
-        cd test-apps/vault-secrets-app && docker build -t vault-secrets-app:monitor . && cd ../..
-        
-        kubectl apply -f k8s/app/static-secrets-deployment.yaml
-        sed "s/REPLACE_WITH_ROOT_TOKEN/$ROOT_TOKEN/g" k8s/app/vault-secrets-deployment.yaml | kubectl apply -f -
-        kubectl wait --for=condition=available deployment/static-secrets-app --timeout=300s
-        kubectl wait --for=condition=available deployment/vault-secrets-app --timeout=300s
-        
-        # Run quick performance test
-        kubectl port-forward svc/static-secrets-service 8080:5000 &
-        STATIC_PID=$!
-        kubectl port-forward svc/vault-secrets-service 8081:5000 &
-        VAULT_PID=$!
-        sleep 10
-        
-        # Test 10 iterations
-        TOTAL_OVERHEAD=0
-        FAILED_TESTS=0
-        
-        for i in {1..10}; do
-          STATIC_START=$(date +%s.%N)
-          STATIC_RESP=$(curl -s http://localhost:8080/users 2>/dev/null || echo "FAILED")
-          STATIC_END=$(date +%s.%N)
-          
-          VAULT_START=$(date +%s.%N)
-          VAULT_RESP=$(curl -s http://localhost:8081/users 2>/dev/null || echo "FAILED")
-          VAULT_END=$(date +%s.%N)
-          
-          if [[ "$STATIC_RESP" == "FAILED" || "$VAULT_RESP" == "FAILED" ]]; then
-            FAILED_TESTS=$((FAILED_TESTS + 1))
-            continue
+      - name: Quick Performance Check
+        id: perf_check
+        run: |
+          kubectl port-forward svc/vault-service 8200:8200 -n vault &
+          PF_PID=$!
+          sleep 10
+
+          export VAULT_ADDR="http://localhost:8200"
+          vault operator init -key-shares=1 -key-threshold=1 > vault-keys.txt
+          UNSEAL_KEY=$(grep 'Unseal Key 1:' vault-keys.txt | awk '{print $NF}')
+          ROOT_TOKEN=$(grep 'Initial Root Token:' vault-keys.txt | awk '{print $NF}')
+          vault operator unseal $UNSEAL_KEY
+          vault auth $ROOT_TOKEN
+
+          vault secrets enable database
+          vault write database/config/postgres \
+            plugin_name=postgresql-database-plugin \
+            connection_url="postgresql://{{username}}:{{password}}@postgres-service.database.svc.cluster.local:5432/testdb?sslmode=disable" \
+            allowed_roles="readonly" \
+            username="postgres" \
+            password="initialpassword123"
+          vault write database/roles/readonly \
+            db_name=postgres \
+            creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
+            default_ttl="1h" \
+            max_ttl="24h"
+
+          kill $PF_PID
+
+          eval $(minikube docker-env)
+          cd test-apps/static-secrets-app && docker build -t static-secrets-app:monitor . && cd ../..
+          cd test-apps/vault-secrets-app && docker build -t vault-secrets-app:monitor . && cd ../..
+
+          kubectl apply -f k8s/app/static-secrets-deployment.yaml
+          sed "s/REPLACE_WITH_ROOT_TOKEN/$ROOT_TOKEN/g" k8s/app/vault-secrets-deployment.yaml | kubectl apply -f -
+          kubectl wait --for=condition=available deployment/static-secrets-app --timeout=300s
+          kubectl wait --for=condition=available deployment/vault-secrets-app --timeout=300s
+
+          kubectl port-forward svc/static-secrets-service 8080:5000 &
+          STATIC_PID=$!
+          kubectl port-forward svc/vault-secrets-service 8081:5000 &
+          VAULT_PID=$!
+          sleep 10
+
+          TOTAL_OVERHEAD=0
+          FAILED_TESTS=0
+
+          for i in {1..10}; do
+            STATIC_START=$(date +%s.%N)
+            STATIC_RESP=$(curl -s http://localhost:8080/users 2>/dev/null || echo "FAILED")
+            STATIC_END=$(date +%s.%N)
+
+            VAULT_START=$(date +%s.%N)
+            VAULT_RESP=$(curl -s http://localhost:8081/users 2>/dev/null || echo "FAILED")
+            VAULT_END=$(date +%s.%N)
+
+            if [[ "$STATIC_RESP" == "FAILED" || "$VAULT_RESP" == "FAILED" ]]; then
+              FAILED_TESTS=$((FAILED_TESTS + 1))
+              continue
+            fi
+
+            STATIC_TIME=$(echo "$STATIC_END - $STATIC_START" | bc -l)
+            VAULT_TIME=$(echo "$VAULT_END - $VAULT_START" | bc -l)
+            OVERHEAD_PERCENT=$(echo "scale=2; (($VAULT_TIME - $STATIC_TIME) / $STATIC_TIME) * 100" | bc -l)
+            TOTAL_OVERHEAD=$(echo "$TOTAL_OVERHEAD + $OVERHEAD_PERCENT" | bc -l)
+          done
+
+          kill $STATIC_PID $VAULT_PID
+
+          SUCCESSFUL_TESTS=$((10 - FAILED_TESTS))
+          if [ $SUCCESSFUL_TESTS -gt 0 ]; then
+            AVG_OVERHEAD=$(echo "scale=2; $TOTAL_OVERHEAD / $SUCCESSFUL_TESTS" | bc -l)
+          else
+            AVG_OVERHEAD=999
           fi
-          
-          STATIC_TIME=$(echo "$STATIC_END - $STATIC_START" | bc -l)
-          VAULT_TIME=$(echo "$VAULT_END - $VAULT_START" | bc -l)
-          OVERHEAD_PERCENT=$(echo "scale=2; (($VAULT_TIME - $STATIC_TIME) / $STATIC_TIME) * 100" | bc -l)
-          TOTAL_OVERHEAD=$(echo "$TOTAL_OVERHEAD + $OVERHEAD_PERCENT" | bc -l)
-        done
-        
-        kill $STATIC_PID $VAULT_PID
-        
-        # Calculate results
-        SUCCESSFUL_TESTS=$((10 - FAILED_TESTS))
-        if [ $SUCCESSFUL_TESTS -gt 0 ]; then
-          AVG_OVERHEAD=$(echo "scale=2; $TOTAL_OVERHEAD / $SUCCESSFUL_TESTS" | bc -l)
-        else
-          AVG_OVERHEAD=999
-        fi
-        
-        echo "avg_overhead=$AVG_OVERHEAD" >> $GITHUB_OUTPUT
-        echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
-        echo "successful_tests=$SUCCESSFUL_TESTS" >> $GITHUB_OUTPUT
-        
-        # Check if alert needed
-        ALERT_NEEDED=$(echo "$AVG_OVERHEAD > $ALERT_THRESHOLD" | bc -l)
-        echo "alert_needed=$ALERT_NEEDED" >> $GITHUB_OUTPUT
 
-    - name: Send Slack Alert if Performance Degraded
-      if: steps.perf_check.outputs.alert_needed == '1' && env.SLACK_WEBHOOK_URL
-      run: |
-        curl -X POST -H 'Content-type: application/json'         --data '{
-          "text": "🚨 Vault Performance Alert",
-          "blocks": [
-            {
-              "type": "header",
-              "text": {
-                "type": "plain_text",
-                "text": "Vault Performance Alert 🚨"
-              }
-            },
-            {
-              "type": "section",
-              "fields": [
+          echo "avg_overhead=$AVG_OVERHEAD" >> $GITHUB_OUTPUT
+          echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
+          echo "successful_tests=$SUCCESSFUL_TESTS" >> $GITHUB_OUTPUT
+
+          ALERT_NEEDED=$(echo "$AVG_OVERHEAD > $ALERT_THRESHOLD" | bc -l)
+          echo "alert_needed=$ALERT_NEEDED" >> $GITHUB_OUTPUT
+
+      - name: Send Slack Alert if Performance Degraded
+        if: steps.perf_check.outputs.alert_needed == '1' && env.SLACK_WEBHOOK_URL
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{
+              "text": "\ud83d\udea8 Vault Performance Alert",
+              "blocks": [
                 {
-                  "type": "mrkdwn",
-                  "text": "*Average Overhead:* ${{ steps.perf_check.outputs.avg_overhead }}%"
-                },
-                {
-                  "type": "mrkdwn", 
-                  "text": "*Threshold:* ${{ env.ALERT_THRESHOLD }}%"
-                },
-                {
-                  "type": "mrkdwn",
-                  "text": "*Failed Tests:* ${{ steps.perf_check.outputs.failed_tests }}/10"
-                },
-                {
-                  "type": "mrkdwn",
-                  "text": "*Repository:* ${{ github.repository }}"
-                }
-              ]
-            },
-            {
-              "type": "actions",
-              "elements": [
-                {
-                  "type": "button",
+                  "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "View Workflow"
-                  },
-                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "Vault Performance Alert \ud83d\udea8"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {"type": "mrkdwn", "text": "*Average Overhead:* ${{ steps.perf_check.outputs.avg_overhead }}%"},
+                    {"type": "mrkdwn", "text": "*Threshold:* ${{ env.ALERT_THRESHOLD }}%"},
+                    {"type": "mrkdwn", "text": "*Failed Tests:* ${{ steps.perf_check.outputs.failed_tests }}/10"},
+                    {"type": "mrkdwn", "text": "*Repository:* ${{ github.repository }}"}
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {"type": "plain_text", "text": "View Workflow"},
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
                 }
               ]
-            }
-          ]
-        }' $SLACK_WEBHOOK_URL
+            }' $SLACK_WEBHOOK_URL
 
-    - name: Create Performance Issue if Critical
-      if: steps.perf_check.outputs.avg_overhead > 100
-      uses: actions/github-script@v7
-      with:
-        script: |
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: 
+      - name: Create Performance Issue if Critical
+        if: steps.perf_check.outputs.avg_overhead > 100
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Vault Performance Overhead Exceeded 100%`,
+              body: `The average overhead in the latest run was ${{ steps.perf_check.outputs.avg_overhead }}%. Please investigate.`
+            })

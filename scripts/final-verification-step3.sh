@@ -9,7 +9,7 @@ sleep 3
 
 # Step 2: Start Vault (unseal)
 echo "[+] Starting Vault and unsealing..."
-./scripts/vault-unseal.sh &
+./scripts/vault-unseal.sh
 VAULT_PID=$!
 sleep 20
 
