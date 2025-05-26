@@ -11,14 +11,13 @@ on:
         default: '75'
         type: string
 
-env:
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  ALERT_THRESHOLD: ${{ github.event.inputs.alert_threshold }}
-
 jobs:
   performance-monitoring:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      ALERT_THRESHOLD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.alert_threshold || '75' }}
 
     steps:
       - name: Checkout code
@@ -26,6 +25,7 @@ jobs:
 
       - name: Setup Infrastructure
         run: |
+          set -e
           curl -LO https://storage.googleapis.com/minikube/releases/v1.32.0/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
@@ -39,6 +39,8 @@ jobs:
       - name: Quick Performance Check
         id: perf_check
         run: |
+          set -e
+          # Setup Vault
           kubectl port-forward svc/vault-service 8200:8200 -n vault &
           PF_PID=$!
           sleep 10
@@ -48,7 +50,7 @@ jobs:
           UNSEAL_KEY=$(grep 'Unseal Key 1:' vault-keys.txt | awk '{print $NF}')
           ROOT_TOKEN=$(grep 'Initial Root Token:' vault-keys.txt | awk '{print $NF}')
           vault operator unseal $UNSEAL_KEY
-          vault auth $ROOT_TOKEN
+          vault login $ROOT_TOKEN
 
           vault secrets enable database
           vault write database/config/postgres \
@@ -57,6 +59,7 @@ jobs:
             allowed_roles="readonly" \
             username="postgres" \
             password="initialpassword123"
+
           vault write database/roles/readonly \
             db_name=postgres \
             creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";" \
@@ -64,42 +67,32 @@ jobs:
             max_ttl="24h"
 
           kill $PF_PID
-
           eval $(minikube docker-env)
-          
-          # STEP 5: Measure Deployment Overhead
-          echo "=== Measuring Deployment Performance ==="
-          
-          # Build images and measure time
+
+          # Build apps
           BUILD_START=$(date +%s.%N)
           cd test-apps/static-secrets-app && docker build -t static-secrets-app:monitor . && cd ../..
           cd test-apps/vault-secrets-app && docker build -t vault-secrets-app:monitor . && cd ../..
           BUILD_END=$(date +%s.%N)
           BUILD_TIME=$(echo "$BUILD_END - $BUILD_START" | bc -l)
-          
-          # Deploy static app and measure time
+
+          # Deploy apps
           STATIC_DEPLOY_START=$(date +%s.%N)
           kubectl apply -f k8s/app/static-secrets-deployment.yaml
           kubectl wait --for=condition=available deployment/static-secrets-app --timeout=300s
           STATIC_DEPLOY_END=$(date +%s.%N)
           STATIC_DEPLOY_TIME=$(echo "$STATIC_DEPLOY_END - $STATIC_DEPLOY_START" | bc -l)
-          
-          # Deploy vault app and measure time
+
           VAULT_DEPLOY_START=$(date +%s.%N)
           sed "s/REPLACE_WITH_ROOT_TOKEN/$ROOT_TOKEN/g" k8s/app/vault-secrets-deployment.yaml | kubectl apply -f -
           kubectl wait --for=condition=available deployment/vault-secrets-app --timeout=300s
           VAULT_DEPLOY_END=$(date +%s.%N)
           VAULT_DEPLOY_TIME=$(echo "$VAULT_DEPLOY_END - $VAULT_DEPLOY_START" | bc -l)
-          
-          # Calculate deployment overhead
+
           DEPLOY_OVERHEAD=$(echo "$VAULT_DEPLOY_TIME - $STATIC_DEPLOY_TIME" | bc -l)
           DEPLOY_OVERHEAD_PERCENT=$(echo "scale=2; ($DEPLOY_OVERHEAD / $STATIC_DEPLOY_TIME) * 100" | bc -l)
-          
-          echo "Build Time: ${BUILD_TIME}s"
-          echo "Static App Deploy Time: ${STATIC_DEPLOY_TIME}s"
-          echo "Vault App Deploy Time: ${VAULT_DEPLOY_TIME}s"
-          echo "Deployment Overhead: ${DEPLOY_OVERHEAD}s (${DEPLOY_OVERHEAD_PERCENT}%)"
 
+          # Runtime Test
           kubectl port-forward svc/static-secrets-service 8080:5000 &
           STATIC_PID=$!
           kubectl port-forward svc/vault-secrets-service 8081:5000 &
@@ -111,11 +104,11 @@ jobs:
 
           for i in {1..10}; do
             STATIC_START=$(date +%s.%N)
-            STATIC_RESP=$(curl -s http://localhost:8080/users 2>/dev/null || echo "FAILED")
+            STATIC_RESP=$(curl -s http://localhost:8080/users || echo "FAILED")
             STATIC_END=$(date +%s.%N)
 
             VAULT_START=$(date +%s.%N)
-            VAULT_RESP=$(curl -s http://localhost:8081/users 2>/dev/null || echo "FAILED")
+            VAULT_RESP=$(curl -s http://localhost:8081/users || echo "FAILED")
             VAULT_END=$(date +%s.%N)
 
             if [[ "$STATIC_RESP" == "FAILED" || "$VAULT_RESP" == "FAILED" ]]; then
@@ -130,13 +123,8 @@ jobs:
           done
 
           kill $STATIC_PID $VAULT_PID
-
           SUCCESSFUL_TESTS=$((10 - FAILED_TESTS))
-          if [ $SUCCESSFUL_TESTS -gt 0 ]; then
-            AVG_OVERHEAD=$(echo "scale=2; $TOTAL_OVERHEAD / $SUCCESSFUL_TESTS" | bc -l)
-          else
-            AVG_OVERHEAD=999
-          fi
+          AVG_OVERHEAD=$(echo "scale=2; $SUCCESSFUL_TESTS > 0 ? $TOTAL_OVERHEAD / $SUCCESSFUL_TESTS : 999" | bc -l)
 
           echo "avg_overhead=$AVG_OVERHEAD" >> $GITHUB_OUTPUT
           echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
@@ -146,23 +134,18 @@ jobs:
           echo "vault_deploy_time=$VAULT_DEPLOY_TIME" >> $GITHUB_OUTPUT
           echo "deploy_overhead=$DEPLOY_OVERHEAD" >> $GITHUB_OUTPUT
           echo "deploy_overhead_percent=$DEPLOY_OVERHEAD_PERCENT" >> $GITHUB_OUTPUT
-
-          ALERT_NEEDED=$(echo "$AVG_OVERHEAD > $ALERT_THRESHOLD" | bc -l)
-          echo "alert_needed=$ALERT_NEEDED" >> $GITHUB_OUTPUT
+          echo "alert_needed=$(echo "$AVG_OVERHEAD > $ALERT_THRESHOLD" | bc -l)" >> $GITHUB_OUTPUT
 
       - name: Send Slack Alert if Performance Degraded
-        if: steps.perf_check.outputs.alert_needed == '1' && env.SLACK_WEBHOOK_URL
+        if: ${{ steps.perf_check.outputs.alert_needed == '1' && env.SLACK_WEBHOOK_URL != '' }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data '{
-              "text": "\ud83d\udea8 Vault Performance Alert",
+              "text": ":rotating_light: Vault Performance Alert",
               "blocks": [
                 {
                   "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Vault Performance Alert \ud83d\udea8"
-                  }
+                  "text": {"type": "plain_text", "text": "Vault Performance Alert :rotating_light:"}
                 },
                 {
                   "type": "section",
@@ -189,7 +172,7 @@ jobs:
             }' $SLACK_WEBHOOK_URL
 
       - name: Create Performance Issue if Critical
-        if: steps.perf_check.outputs.avg_overhead > 100
+        if: ${{ fromJson(steps.perf_check.outputs.avg_overhead) > 100 }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -198,27 +181,17 @@ jobs:
               repo: context.repo.repo,
               title: `Vault Performance Overhead Exceeded 100%`,
               body: `## Performance Alert Report
-              
-              The latest performance monitoring run has detected critical performance issues:
-              
-              ### Runtime Performance
+
+              ### Runtime
               - **Average Overhead:** ${{ steps.perf_check.outputs.avg_overhead }}%
               - **Failed Tests:** ${{ steps.perf_check.outputs.failed_tests }}/10
-              - **Successful Tests:** ${{ steps.perf_check.outputs.successful_tests }}/10
-              
-              ### Deployment Performance
+
+              ### Deployment
               - **Build Time:** ${{ steps.perf_check.outputs.build_time }}s
               - **Static App Deploy Time:** ${{ steps.perf_check.outputs.static_deploy_time }}s
               - **Vault App Deploy Time:** ${{ steps.perf_check.outputs.vault_deploy_time }}s
-              - **Deployment Overhead:** ${{ steps.perf_check.outputs.deploy_overhead }}s (${{ steps.perf_check.outputs.deploy_overhead_percent }}%)
-              
-              ### Action Required
-              Please investigate the performance degradation and consider:
-              1. Optimizing Vault configuration
-              2. Reviewing resource allocation
-              3. Checking network latency issues
-              4. Analyzing deployment complexity
-              
-              **Workflow Run:** [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-              `
+              - **Deployment Overhead:** ${{ steps.perf_check.outputs.deploy_overhead }}s (${{
+              steps.perf_check.outputs.deploy_overhead_percent }}%)
+
+              **Please investigate.**`
             })
