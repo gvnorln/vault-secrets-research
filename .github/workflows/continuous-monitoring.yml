@@ -26,11 +26,11 @@ jobs:
       - name: Setup Infrastructure
         run: |
           set -e
-          curl -LO https://storage.googleapis.com/minikube/releases/v1.32.0/minikube-linux-amd64
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.36.0/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-          minikube start --driver=docker --memory=4096 --cpus=2
+          minikube start --driver=docker --memory=4096 --cpus=2 --alsologtostderr -v=7
           kubectl create namespace database || true
           kubectl apply -f k8s/postgres/
           kubectl create namespace vault || true
