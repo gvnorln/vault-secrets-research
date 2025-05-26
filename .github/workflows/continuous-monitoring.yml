@@ -66,13 +66,39 @@ jobs:
           kill $PF_PID
 
           eval $(minikube docker-env)
+          
+          # STEP 5: Measure Deployment Overhead
+          echo "=== Measuring Deployment Performance ==="
+          
+          # Build images and measure time
+          BUILD_START=$(date +%s.%N)
           cd test-apps/static-secrets-app && docker build -t static-secrets-app:monitor . && cd ../..
           cd test-apps/vault-secrets-app && docker build -t vault-secrets-app:monitor . && cd ../..
-
+          BUILD_END=$(date +%s.%N)
+          BUILD_TIME=$(echo "$BUILD_END - $BUILD_START" | bc -l)
+          
+          # Deploy static app and measure time
+          STATIC_DEPLOY_START=$(date +%s.%N)
           kubectl apply -f k8s/app/static-secrets-deployment.yaml
-          sed "s/REPLACE_WITH_ROOT_TOKEN/$ROOT_TOKEN/g" k8s/app/vault-secrets-deployment.yaml | kubectl apply -f -
           kubectl wait --for=condition=available deployment/static-secrets-app --timeout=300s
+          STATIC_DEPLOY_END=$(date +%s.%N)
+          STATIC_DEPLOY_TIME=$(echo "$STATIC_DEPLOY_END - $STATIC_DEPLOY_START" | bc -l)
+          
+          # Deploy vault app and measure time
+          VAULT_DEPLOY_START=$(date +%s.%N)
+          sed "s/REPLACE_WITH_ROOT_TOKEN/$ROOT_TOKEN/g" k8s/app/vault-secrets-deployment.yaml | kubectl apply -f -
           kubectl wait --for=condition=available deployment/vault-secrets-app --timeout=300s
+          VAULT_DEPLOY_END=$(date +%s.%N)
+          VAULT_DEPLOY_TIME=$(echo "$VAULT_DEPLOY_END - $VAULT_DEPLOY_START" | bc -l)
+          
+          # Calculate deployment overhead
+          DEPLOY_OVERHEAD=$(echo "$VAULT_DEPLOY_TIME - $STATIC_DEPLOY_TIME" | bc -l)
+          DEPLOY_OVERHEAD_PERCENT=$(echo "scale=2; ($DEPLOY_OVERHEAD / $STATIC_DEPLOY_TIME) * 100" | bc -l)
+          
+          echo "Build Time: ${BUILD_TIME}s"
+          echo "Static App Deploy Time: ${STATIC_DEPLOY_TIME}s"
+          echo "Vault App Deploy Time: ${VAULT_DEPLOY_TIME}s"
+          echo "Deployment Overhead: ${DEPLOY_OVERHEAD}s (${DEPLOY_OVERHEAD_PERCENT}%)"
 
           kubectl port-forward svc/static-secrets-service 8080:5000 &
           STATIC_PID=$!
@@ -115,6 +141,11 @@ jobs:
           echo "avg_overhead=$AVG_OVERHEAD" >> $GITHUB_OUTPUT
           echo "failed_tests=$FAILED_TESTS" >> $GITHUB_OUTPUT
           echo "successful_tests=$SUCCESSFUL_TESTS" >> $GITHUB_OUTPUT
+          echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
+          echo "static_deploy_time=$STATIC_DEPLOY_TIME" >> $GITHUB_OUTPUT
+          echo "vault_deploy_time=$VAULT_DEPLOY_TIME" >> $GITHUB_OUTPUT
+          echo "deploy_overhead=$DEPLOY_OVERHEAD" >> $GITHUB_OUTPUT
+          echo "deploy_overhead_percent=$DEPLOY_OVERHEAD_PERCENT" >> $GITHUB_OUTPUT
 
           ALERT_NEEDED=$(echo "$AVG_OVERHEAD > $ALERT_THRESHOLD" | bc -l)
           echo "alert_needed=$ALERT_NEEDED" >> $GITHUB_OUTPUT
@@ -136,9 +167,11 @@ jobs:
                 {
                   "type": "section",
                   "fields": [
-                    {"type": "mrkdwn", "text": "*Average Overhead:* ${{ steps.perf_check.outputs.avg_overhead }}%"},
+                    {"type": "mrkdwn", "text": "*Runtime Overhead:* ${{ steps.perf_check.outputs.avg_overhead }}%"},
+                    {"type": "mrkdwn", "text": "*Deploy Overhead:* ${{ steps.perf_check.outputs.deploy_overhead_percent }}%"},
                     {"type": "mrkdwn", "text": "*Threshold:* ${{ env.ALERT_THRESHOLD }}%"},
                     {"type": "mrkdwn", "text": "*Failed Tests:* ${{ steps.perf_check.outputs.failed_tests }}/10"},
+                    {"type": "mrkdwn", "text": "*Build Time:* ${{ steps.perf_check.outputs.build_time }}s"},
                     {"type": "mrkdwn", "text": "*Repository:* ${{ github.repository }}"}
                   ]
                 },
@@ -164,5 +197,28 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Vault Performance Overhead Exceeded 100%`,
-              body: `The average overhead in the latest run was ${{ steps.perf_check.outputs.avg_overhead }}%. Please investigate.`
+              body: `## Performance Alert Report
+              
+              The latest performance monitoring run has detected critical performance issues:
+              
+              ### Runtime Performance
+              - **Average Overhead:** ${{ steps.perf_check.outputs.avg_overhead }}%
+              - **Failed Tests:** ${{ steps.perf_check.outputs.failed_tests }}/10
+              - **Successful Tests:** ${{ steps.perf_check.outputs.successful_tests }}/10
+              
+              ### Deployment Performance
+              - **Build Time:** ${{ steps.perf_check.outputs.build_time }}s
+              - **Static App Deploy Time:** ${{ steps.perf_check.outputs.static_deploy_time }}s
+              - **Vault App Deploy Time:** ${{ steps.perf_check.outputs.vault_deploy_time }}s
+              - **Deployment Overhead:** ${{ steps.perf_check.outputs.deploy_overhead }}s (${{ steps.perf_check.outputs.deploy_overhead_percent }}%)
+              
+              ### Action Required
+              Please investigate the performance degradation and consider:
+              1. Optimizing Vault configuration
+              2. Reviewing resource allocation
+              3. Checking network latency issues
+              4. Analyzing deployment complexity
+              
+              **Workflow Run:** [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              `
             })

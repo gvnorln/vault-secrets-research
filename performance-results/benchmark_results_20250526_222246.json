@@ -1,0 +1,1758 @@
+{
+  "benchmark_info": {
+    "iterations": 50,
+    "timestamp": "20250526_222246"
+  },
+  "results": [
+    {
+      "iteration": 1,
+      "static_app": {
+        "total_response_time": 0.021291810,
+        "metrics": {
+          "connection_time": "0.007s",
+          "query_time": "0.001s",
+          "total_time": "0.008s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029700304,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-GHhc8nmDBAIqATqgEfbb-1748272976",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.008408494,
+        "overhead_percentage": 39.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 2,
+      "static_app": {
+        "total_response_time": 0.018178405,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027257213,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-BfuzYjVW5EFjZ0n8NBEP-1748272977",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009078808,
+        "overhead_percentage": 49.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 3,
+      "static_app": {
+        "total_response_time": 0.017196029,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029447333,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-RQqTl2LFmfgkmhi8zLB5-1748272977",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012251304,
+        "overhead_percentage": 71.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 4,
+      "static_app": {
+        "total_response_time": 0.017315866,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.005s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029006266,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-o4D5P7kYaocThiQkxvFV-1748272977",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011690400,
+        "overhead_percentage": 67.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 5,
+      "static_app": {
+        "total_response_time": 0.019264408,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030525812,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-wWH0TxsdHS9MjSOHWwA8-1748272977",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011261404,
+        "overhead_percentage": 58.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 6,
+      "static_app": {
+        "total_response_time": 0.018393844,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028343166,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-QmxxPTGZYrhHZlUnIRC8-1748272977",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009949322,
+        "overhead_percentage": 54.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 7,
+      "static_app": {
+        "total_response_time": 0.017967313,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030836342,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.019s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-eMrlSomnnwGhaatrDiAD-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012869029,
+        "overhead_percentage": 71.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 8,
+      "static_app": {
+        "total_response_time": 0.018918862,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030595385,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-8v85adYnbam1UXgKqE7S-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011676523,
+        "overhead_percentage": 61.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 9,
+      "static_app": {
+        "total_response_time": 0.018637487,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029682210,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-2MqShMeQvcR2rSMnytOx-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011044723,
+        "overhead_percentage": 59.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 10,
+      "static_app": {
+        "total_response_time": 0.020043098,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030663414,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-yBhesJpfsUbxpCyL8yOi-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010620316,
+        "overhead_percentage": 52.00
+      },
+      "rotation": {
+        "performed": true,
+        "duration_seconds": 0.080195785
+      }
+    },
+    {
+      "iteration": 11,
+      "static_app": {
+        "total_response_time": 0.021133629,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.031250529,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-xl6aQl3UUKjzZ5hHBtUH-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010116900,
+        "overhead_percentage": 47.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 12,
+      "static_app": {
+        "total_response_time": 0.018003332,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027319942,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.015s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-avS9cxUIdnd5Mih7DDCT-1748272978",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009316610,
+        "overhead_percentage": 51.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 13,
+      "static_app": {
+        "total_response_time": 0.017853057,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029839438,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-dr6Scn2iKgmKRx2BiEXr-1748272979",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011986381,
+        "overhead_percentage": 67.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 14,
+      "static_app": {
+        "total_response_time": 0.017660862,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027989494,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-MrO0XrONT72CwyKfosob-1748272979",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010328632,
+        "overhead_percentage": 58.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 15,
+      "static_app": {
+        "total_response_time": 0.017998844,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028975306,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-ghrHxjrZWIcuwL1pWGOX-1748272979",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010976462,
+        "overhead_percentage": 60.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 16,
+      "static_app": {
+        "total_response_time": 0.019076151,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030236502,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-fQnUe6HcvQ2l1012Abc8-1748272979",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011160351,
+        "overhead_percentage": 58.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 17,
+      "static_app": {
+        "total_response_time": 0.017679246,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028621915,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-ppWaW1HSkixZ0UF0WsD9-1748272979",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010942669,
+        "overhead_percentage": 61.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 18,
+      "static_app": {
+        "total_response_time": 0.017651654,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029205514,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-PJKJgdp0Go91VhcG4Wxl-1748272980",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011553860,
+        "overhead_percentage": 65.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 19,
+      "static_app": {
+        "total_response_time": 0.017253869,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.032726844,
+        "metrics": {
+          "db_connection_time": "0.007s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.019s",
+          "total_time": "0.020s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-0ONIwUi5vSdD5Te4u8Vy-1748272980",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.015472975,
+        "overhead_percentage": 89.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 20,
+      "static_app": {
+        "total_response_time": 0.018460581,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027908270,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-SBjDRfFipsem5LdiNVl8-1748272980",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009447689,
+        "overhead_percentage": 51.00
+      },
+      "rotation": {
+        "performed": true,
+        "duration_seconds": 0.073003721
+      }
+    },
+    {
+      "iteration": 21,
+      "static_app": {
+        "total_response_time": 0.018237978,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028957733,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-mudJJlckysx13eArrUqe-1748272980",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010719755,
+        "overhead_percentage": 58.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 22,
+      "static_app": {
+        "total_response_time": 0.018615165,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.031735481,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.018s",
+          "total_time": "0.020s",
+          "vault_auth_time": "0.013s",
+          "vault_overhead": "0.013s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-iwkJMrMmrWbyY4w28Cgt-1748272980",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.013120316,
+        "overhead_percentage": 70.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 23,
+      "static_app": {
+        "total_response_time": 0.017362375,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027205354,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.014s",
+          "total_time": "0.015s",
+          "vault_auth_time": "0.009s",
+          "vault_overhead": "0.009s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-lu1PRF3hZpcZA18FOJpA-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009842979,
+        "overhead_percentage": 56.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 24,
+      "static_app": {
+        "total_response_time": 0.018054650,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028528357,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-hfu4H7KlMhy7KoqldGoW-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010473707,
+        "overhead_percentage": 58.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 25,
+      "static_app": {
+        "total_response_time": 0.017532317,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029896547,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.013s",
+          "vault_overhead": "0.013s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-35L4TuaBsh1d9Vy86MJK-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012364230,
+        "overhead_percentage": 70.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 26,
+      "static_app": {
+        "total_response_time": 0.017745443,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028819681,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-xhTOyuWwHfuAWrHMgCa0-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011074238,
+        "overhead_percentage": 62.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 27,
+      "static_app": {
+        "total_response_time": 0.018388414,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027199613,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.014s",
+          "total_time": "0.015s",
+          "vault_auth_time": "0.009s",
+          "vault_overhead": "0.009s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-WH4ftbI9OgLxbOgRmtfX-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.008811199,
+        "overhead_percentage": 47.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 28,
+      "static_app": {
+        "total_response_time": 0.017313101,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028907148,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-3WcLgNExPeLzeVWIgPNu-1748272981",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011594047,
+        "overhead_percentage": 66.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 29,
+      "static_app": {
+        "total_response_time": 0.018458958,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028524400,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-ZqYIlr6L9tOHpfGJ3r0B-1748272982",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010065442,
+        "overhead_percentage": 54.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 30,
+      "static_app": {
+        "total_response_time": 0.018210286,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028144138,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-nlu4Xdbfk3mK6qL5WBzm-1748272982",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009933852,
+        "overhead_percentage": 54.00
+      },
+      "rotation": {
+        "performed": true,
+        "duration_seconds": 0.074658715
+      }
+    },
+    {
+      "iteration": 31,
+      "static_app": {
+        "total_response_time": 0.018628871,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029176419,
+        "metrics": {
+          "db_connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-Qc5oe7o4vQ05zjnyckRl-1748272982",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010547548,
+        "overhead_percentage": 56.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 32,
+      "static_app": {
+        "total_response_time": 0.017869628,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029877641,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-gdz9QhiYysS1XR6Pnvq3-1748272982",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012008013,
+        "overhead_percentage": 67.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 33,
+      "static_app": {
+        "total_response_time": 0.017797351,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028784735,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-MqDAKI1BBg14Tbt39130-1748272982",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010987384,
+        "overhead_percentage": 61.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 34,
+      "static_app": {
+        "total_response_time": 0.019201469,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.031415673,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-bNjphJ3oslRi3g1s7e3w-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012214204,
+        "overhead_percentage": 63.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 35,
+      "static_app": {
+        "total_response_time": 0.019282683,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.031613760,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-gD3saO9G1QWP8scCMYDv-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012331077,
+        "overhead_percentage": 63.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 36,
+      "static_app": {
+        "total_response_time": 0.018134100,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028263454,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-3gHbLnA0z0gSLJpIa1H5-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010129354,
+        "overhead_percentage": 55.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 37,
+      "static_app": {
+        "total_response_time": 0.018351584,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029331303,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-8WImP0Dr0ka3i7gwzO8a-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010979719,
+        "overhead_percentage": 59.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 38,
+      "static_app": {
+        "total_response_time": 0.017854058,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028723799,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-zNaUCX35OL0YV8adzLhj-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010869741,
+        "overhead_percentage": 60.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 39,
+      "static_app": {
+        "total_response_time": 0.017805396,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027376129,
+        "metrics": {
+          "db_connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.014s",
+          "total_time": "0.015s",
+          "vault_auth_time": "0.009s",
+          "vault_overhead": "0.009s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-ScsFGYegQw0UJFDmHFGp-1748272983",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009570733,
+        "overhead_percentage": 53.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 40,
+      "static_app": {
+        "total_response_time": 0.017479999,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029059467,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-BfiCa0AfDI0Vig8OhMg6-1748272984",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011579468,
+        "overhead_percentage": 66.00
+      },
+      "rotation": {
+        "performed": true,
+        "duration_seconds": 0.073740300
+      }
+    },
+    {
+      "iteration": 41,
+      "static_app": {
+        "total_response_time": 0.019104254,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029959206,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-MY7mKuBgPoKYI5pVVJj8-1748272984",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010854952,
+        "overhead_percentage": 56.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 42,
+      "static_app": {
+        "total_response_time": 0.018630784,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028936272,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.017s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-dtFRpXDufnvNCPa7XVg5-1748272984",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010305488,
+        "overhead_percentage": 55.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 43,
+      "static_app": {
+        "total_response_time": 0.018140422,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027542395,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-OfTfmV5xDhV3gdJptveP-1748272984",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009401973,
+        "overhead_percentage": 51.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 44,
+      "static_app": {
+        "total_response_time": 0.017824092,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.030163855,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.017s",
+          "total_time": "0.018s",
+          "vault_auth_time": "0.012s",
+          "vault_overhead": "0.012s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-E20m59ArB1r9NZzOCwMM-1748272984",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.012339763,
+        "overhead_percentage": 69.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 45,
+      "static_app": {
+        "total_response_time": 0.017761173,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.029193572,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-3o1R6r73Wqwf8SM4GDyD-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.011432399,
+        "overhead_percentage": 64.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 46,
+      "static_app": {
+        "total_response_time": 0.019501589,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.052103185,
+        "metrics": {
+          "db_connection_time": "0.004s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.039s",
+          "total_time": "0.040s",
+          "vault_auth_time": "0.035s",
+          "vault_overhead": "0.035s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-tA3FByxTGalr3nxunXSz-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.032601596,
+        "overhead_percentage": 167.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 47,
+      "static_app": {
+        "total_response_time": 0.019870800,
+        "metrics": {
+          "connection_time": "0.006s",
+          "query_time": "0.001s",
+          "total_time": "0.007s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028669586,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.015s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-qWph8IcjQK6JdVIHqu80-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.008798786,
+        "overhead_percentage": 44.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 48,
+      "static_app": {
+        "total_response_time": 0.017584807,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.028274255,
+        "metrics": {
+          "db_connection_time": "0.004s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.016s",
+          "total_time": "0.016s",
+          "vault_auth_time": "0.011s",
+          "vault_overhead": "0.011s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-i97Q3ar71fcmfqzxCFe6-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.010689448,
+        "overhead_percentage": 60.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 49,
+      "static_app": {
+        "total_response_time": 0.021413401,
+        "metrics": {
+          "connection_time": "0.007s",
+          "query_time": "0.001s",
+          "total_time": "0.008s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.035291717,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.019s",
+          "total_time": "0.020s",
+          "vault_auth_time": "0.013s",
+          "vault_overhead": "0.013s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-xpdqowAz4DLvmeiZt8P5-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.013878316,
+        "overhead_percentage": 64.00
+      },
+      "rotation": {
+        "performed": false,
+        "duration_seconds": null
+      }
+    },
+    {
+      "iteration": 50,
+      "static_app": {
+        "total_response_time": 0.017227879,
+        "metrics": {
+          "connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_time": "0.006s"
+        }
+      },
+      "vault_app": {
+        "total_response_time": 0.027088452,
+        "metrics": {
+          "db_connection_time": "0.005s",
+          "query_time": "0.001s",
+          "total_auth_time": "0.014s",
+          "total_time": "0.015s",
+          "vault_auth_time": "0.010s",
+          "vault_overhead": "0.010s"
+        },
+        "security_info": {
+          "credentials_user": "v-root-readonly-XaMdYAvqVmqLQo7BotyC-1748272985",
+          "dynamic_credentials": true,
+          "lease_duration": 0
+        }
+      },
+      "comparison": {
+        "overhead_seconds": 0.009860573,
+        "overhead_percentage": 57.00
+      },
+      "rotation": {
+        "performed": true,
+        "duration_seconds": 0.073680517
+      }
+    }
+  ]
+}
