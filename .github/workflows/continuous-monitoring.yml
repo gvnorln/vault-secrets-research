@@ -31,7 +31,6 @@ jobs:
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
           minikube start --driver=docker --memory=4096 --cpus=2
-          - name: Apply namespace
           kubectl create namespace database || true
           kubectl apply -f k8s/postgres/
           kubectl apply -f k8s/vault/
