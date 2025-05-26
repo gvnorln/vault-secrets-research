@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ITERATIONS=${1:-50}
+ITERATIONS=${1:-100}
 OUTPUT_DIR="performance-results"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 

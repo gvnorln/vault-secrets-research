@@ -1,0 +1,37 @@
+{
+    "benchmark_info": {
+        "iterations": 100,
+        "timestamp": "20250526_195650",
+        "test_date": "2025-05-26T19:57:17+07:00"
+    },
+    "statistics": {
+            "static_app": {
+  "avg": 0.018561649289999992,
+  "min": 0.017207680,
+  "max": 0.024730231,
+  "count": 100
+},
+        "vault_app": {
+  "avg": 0.028745264099999997,
+  "min": 0.025500374,
+  "max": 0.037221876,
+  "count": 100
+},
+        "overhead": {
+            "absolute_seconds": {
+  "avg": 0.010183614810000002,
+  "min": 0.005848298,
+  "max": 0.017885320
+},
+            "percentage": {
+  "avg": 54.59,
+  "min": 24.00,
+  "max": 92.00
+}
+        }
+    },
+    "recommendations": {
+        "acceptable_overhead_threshold": "< 50%",
+        "performance_grade": "C - Acceptable"
+    }
+}

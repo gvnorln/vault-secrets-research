@@ -33,7 +33,7 @@ jobs:
       - name: Run Gitleaks Scan
         run: |
           echo "=== Scanning for secrets in code ==="
-          gitleaks detect --verbose --report-format json --report-path gitleaks-report.json
+          gitleaks detect --source=. --verbose --report-format json --report-path=gitleaks-report.json
 
       - name: Upload Security Report
         if: always()
