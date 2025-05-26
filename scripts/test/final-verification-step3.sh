@@ -25,7 +25,14 @@ vault secrets list
 
 # Step 5: Test dynamic database credentials
 echo "[+] Testing database credentials:"
-./scripts/test-dynamic-db.shadonly
+./scripts/test/test-dynamic-db.sh
+# Step 6: Check PostgreSQL connection
+echo "[+] Checking PostgreSQL connection..."
+kubectl get pods -n database
+kubectl get svc -n database
+# Step 7: Verify database roles
+echo "[+] Verifying database roles..."
+kubectl exec -it $(kubectl get pod -l app=postgres -n database -o jsonpath='{.items[0].metadata.name}') -n database -- psql -U postgres -c "\du"
 
 # Done
 echo "=== Final Verification Step Completed ==="
