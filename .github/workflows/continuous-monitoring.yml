@@ -33,6 +33,7 @@ jobs:
           minikube start --driver=docker --memory=4096 --cpus=2
           kubectl create namespace database || true
           kubectl apply -f k8s/postgres/
+          kubectl create namespace vault || true
           kubectl apply -f k8s/vault/
           kubectl wait --for=condition=ready pod -l app=postgres -n database --timeout=300s
           kubectl wait --for=condition=ready pod -l app=vault -n vault --timeout=300s
