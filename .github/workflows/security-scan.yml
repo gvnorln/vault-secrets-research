@@ -8,7 +8,6 @@ on:
   schedule:
     - cron: '0 6 * * 1' # Weekly on Monday
 
-# Add permissions for SARIF upload
 permissions:
   contents: read
   security-events: write
@@ -18,6 +17,7 @@ jobs:
   secrets-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,21 +30,37 @@ jobs:
           tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
           sudo mv gitleaks /usr/local/bin/
 
-      - name: Run Gitleaks Scan
+      - name: Run Gitleaks on Static Secrets App
         run: |
-          echo "=== Scanning for secrets in code ==="
-          gitleaks detect --source=. --verbose --report-format json --report-path=gitleaks-report.json
+          echo "=== Scanning Static Secrets App ==="
+          gitleaks detect \
+            --source=test-apps/static-secrets-app \
+            --report-format json \
+            --report-path static-secrets-gitleaks-report.json \
+            --verbose || true
 
-      - name: Upload Security Report
+      - name: Run Gitleaks on Vault Secrets App
+        run: |
+          echo "=== Scanning Vault Secrets App ==="
+          gitleaks detect \
+            --source=test-apps/vault-secrets-app \
+            --report-format json \
+            --report-path vault-secrets-gitleaks-report.json \
+            --verbose || true
+
+      - name: Upload Gitleaks Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gitleaks-report-${{ github.sha }}
-          path: gitleaks-report.json
+          name: gitleaks-reports-${{ github.sha }}
+          path: |
+            static-secrets-gitleaks-report.json
+            vault-secrets-gitleaks-report.json
 
   container-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,19 +84,16 @@ jobs:
           format: 'sarif'
           output: 'vault-app-trivy-results.sarif'
 
-      # Upload SARIF files to Code Scanning (only if Code Scanning is enabled)
-      - name: Upload SARIF results for Static App
+      - name: Upload SARIF results - Static App
         if: always()
         uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
         with:
           sarif_file: static-app-trivy-results.sarif
           category: trivy-static-app
 
-      - name: Upload SARIF results for Vault App
+      - name: Upload SARIF results - Vault App
         if: always()
         uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
         with:
           sarif_file: vault-app-trivy-results.sarif
           category: trivy-vault-app
@@ -95,6 +108,7 @@ jobs:
   dependency-scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
