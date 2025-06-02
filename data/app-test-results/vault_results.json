@@ -1,0 +1,32 @@
+{
+  "health": {
+    "app_type": "vault-secrets",
+    "status": "healthy",
+    "timestamp": 1748872080.4529033,
+    "vault_url": "http://vault-service.vault.svc.cluster.local:8200"
+  },
+  "vault_status": {
+    "response_time": "0.002s",
+    "vault_reachable": true,
+    "vault_status": 200,
+    "vault_url": "http://vault-service.vault.svc.cluster.local:8200"
+  },
+  "users_metrics": {
+    "db_connection_time": "0.005s",
+    "query_time": "0.001s",
+    "total_auth_time": "0.024s",
+    "total_time": "0.025s",
+    "vault_auth_time": "0.019s",
+    "vault_overhead": "0.019s"
+  },
+  "metrics": {
+    "app_type": "vault-secrets",
+    "credentials_type": "dynamic",
+    "security_risk": "low - dynamic credentials from Vault",
+    "vault_config": {
+      "role": "readonly",
+      "token_configured": true,
+      "url": "http://vault-service.vault.svc.cluster.local:8200"
+    }
+  }
+}

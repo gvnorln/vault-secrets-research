@@ -1,0 +1,22 @@
+{
+  "health": {
+    "app_type": "static-secrets",
+    "status": "healthy",
+    "timestamp": 1748872075.4052818
+  },
+  "users_metrics": {
+    "connection_time": "0.005s",
+    "query_time": "0.001s",
+    "total_time": "0.006s"
+  },
+  "metrics": {
+    "app_type": "static-secrets",
+    "credentials_type": "static",
+    "database_config": {
+      "host": "postgres-service.database.svc.cluster.local",
+      "password_exposed": true,
+      "user": "postgres"
+    },
+    "security_risk": "high - static credentials in code"
+  }
+}
