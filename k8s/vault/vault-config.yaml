@@ -16,8 +16,8 @@ data:
       path = "/vault/data"
     }
     
-    default_lease_ttl = "168h"
-    max_lease_ttl = "720h"
+    default_lease_ttl = "1h"
+    max_lease_ttl = "24h"
     
     log_level = "Info"
     

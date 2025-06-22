@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Final Verification Step 3 After Fix ==="
+echo "=== Testing Dynamic Secrets ==="
 
 # Step 1: Cleanup
 echo "[+] Cleaning up..."
