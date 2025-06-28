@@ -185,7 +185,7 @@ PERF_GRADE=$(echo "$OVERHEAD_PERCENT_STATS" | jq -r '
   end
 ')
 
-# Create summary with proper JSON structure
+# Create summary JSON
 jq -n \
     --argjson iterations "$ITERATIONS" \
     --arg timestamp "$TIMESTAMP" \
@@ -225,7 +225,6 @@ echo ""
 echo "Key Performance Metrics:"
 echo "========================"
 
-# Safe output with null handling
 jq -r 'if .statistics.static_app.avg then "Static App - Avg: " + (.statistics.static_app.avg | tostring) + "s, Min: " + (.statistics.static_app.min | tostring) + "s, Max: " + (.statistics.static_app.max | tostring) + "s" else "Static App - No data" end' $SUMMARY_FILE
 
 jq -r 'if .statistics.vault_app.avg then "Vault App  - Avg: " + (.statistics.vault_app.avg | tostring) + "s, Min: " + (.statistics.vault_app.min | tostring) + "s, Max: " + (.statistics.vault_app.max | tostring) + "s" else "Vault App - No data" end' $SUMMARY_FILE
@@ -236,6 +235,12 @@ jq -r 'if .statistics.rotation_efficiency.avg then "Rotation   - Avg: " + (.stat
 
 jq -r '"Grade: " + .recommendations.performance_grade' $SUMMARY_FILE
 
+# 🎯 Print overhead percentage clearly
+AVG_OVERHEAD=$(jq '.statistics.overhead.percentage.avg' $SUMMARY_FILE)
+echo ""
+echo "🎯 Average Overhead Percentage: ${AVG_OVERHEAD}%"
+
+# Save as CSV for spreadsheet use
 CSV_FILE="$OUTPUT_DIR/benchmark_data_${TIMESTAMP}.csv"
 echo "iteration,static_time,vault_time,overhead_seconds,overhead_percentage,rotation_performed,rotation_duration" > $CSV_FILE
 jq -r '.results[] | [.iteration, .static_app.total_response_time, .vault_app.total_response_time, .comparison.overhead_seconds, .comparison.overhead_percentage, .rotation.performed, .rotation.duration_seconds] | @csv' $RESULTS_FILE >> $CSV_FILE
